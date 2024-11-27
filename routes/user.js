@@ -1,7 +1,15 @@
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
 const jwt = require("jsonwebtoken");
+const fastify = require("fastify")();
+const fastifyCookie = require('@fastify/cookie');
+require("dotenv").config()
 
+fastify.register(fastifyCookie, {
+  secret: process.env.SECRETCOOKIES,
+  hook: 'onRequest',
+  parseOptions: {}
+})
 
 async function userRoutes(fastify, options) {
   fastify.register(require("@fastify/jwt"), {
@@ -45,10 +53,10 @@ async function userRoutes(fastify, options) {
 
   fastify.post("/login", async (request, reply) => {
     const client = await fastify.pg.connect();
-    const { username, password } = request.body
-    const secretKey = "secret";
+    const { email, password } = request.body
+    const secretKey = process.env.SECRET;
     try {
-      const values = [username]
+      const values = [email]
       const result = await client.query(
         "SELECT * FROM users WHERE username = $1", values,
       )
@@ -59,17 +67,24 @@ async function userRoutes(fastify, options) {
 
         const match = await bcrypt.compare(password, dbPassword)
 
-        if (username === dbUser && match) {
-          const token = jwt.sign({username}, secretKey, { expiresIn: "1h" })
-          console.log("token; ", token);
-          reply.send({message: "token", token:token})
+        if (email === dbUser && match) {
+          const token = jwt.sign({email}, secretKey, { expiresIn: "1h" })
+          reply
+            .setCookie('foo', email, {
+              path: '/',
+              signed: true, // Sign the cookie
+              httpOnly: true, // Make it HTTP-only
+            })
+            .send({message: "token", token:token})
         }else {
-          console.log("not equal");
+          console.log("que putas: ");
+          return reply.code(401).send({ message: "Invalid email or password" });
         }
       }
       
     } catch (error) {
-      
+      console.error("Error in /login:", error);
+    return reply.code(500).send({ message: "Internal server error" });
     }
   })
 }
