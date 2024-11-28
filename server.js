@@ -1,5 +1,8 @@
 const fastify = require('fastify')({ logger: true });
 const cors = require('@fastify/cors');
+const fastifyCookie = require('@fastify/cookie');
+require("dotenv").config()
+
 
 // Register plugins and routes
 fastify.register(require('./dbConnection'));
@@ -8,6 +11,13 @@ fastify.register(cors, {
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
 });
+
+//Register plugins for cookies
+fastify.register(fastifyCookie, {
+  secret: process.env.SECRETCOOKIES,
+  hook: 'onRequest',
+  parseOptions: {}
+})
 
 // Global Error Handler
 fastify.setErrorHandler((error, request, reply) => {
