@@ -18,7 +18,8 @@ async function userRoutes(fastify, options) {
   fastify.post("/signUp", async (request, reply) => {
     const client = await fastify.pg.connect();
     const { username, email, password } = request.body;
-
+    const secretKey = process.env.SECRET;
+    
     try {
       const salt = await bcrypt.genSalt(saltRounds);
       const hash = await bcrypt.hash(password, salt);
@@ -30,7 +31,17 @@ async function userRoutes(fastify, options) {
         values
       );
 
-      reply.send({ message: "User created successfully" });
+      const token = jwt.sign({ email }, secretKey, { expiresIn: "1h" });
+
+      reply
+            .setCookie("foo", email, {
+              path: "/", // Cookie is valid for the entire site
+              httpOnly: true, // Prevent access via JavaScript
+              secure: false, // Set to true if using HTTPS
+              sameSite: "lax", // Options: 'strict', 'lax', or 'none'
+              maxAge: 3600, // Cookie expiry in seconds
+            })
+            .send({ message: "token", token: token });
     } catch (error) {
       console.error(error);
       reply.status(500).send({ message: "Server error" });
