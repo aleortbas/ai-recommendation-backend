@@ -7,6 +7,7 @@ require("dotenv").config()
 // Register plugins and routes
 fastify.register(require('./dbConnection'));
 fastify.register(require('./routes/user'));
+fastify.register(require('./routes/api'));
 fastify.register(cors, {
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
