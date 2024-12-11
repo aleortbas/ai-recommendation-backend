@@ -1,3 +1,6 @@
+const server = require("../server")
+const Redis = require("ioredis")
+
 async function userRoutes (fastify, options) {
     let grant = "client_credentials";
     let clientId = process.env.ClientID;
@@ -16,7 +19,11 @@ async function userRoutes (fastify, options) {
     })
 
     const data = await response.json()
-    console.log("SPOTIYFY: ", data);
+
+    const redis = new Redis();
+    const expiration = await redis.set(data.access_token, data.token_type, "EX", data.expires_in)
+    console.log("expiration: ", expiration);
+    
 }
 
 module.exports = userRoutes
