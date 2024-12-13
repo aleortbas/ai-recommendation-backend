@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
 const jwt = require("jsonwebtoken");
+const clientId = process.env.ClientID;
 
 async function userRoutes(fastify, options) {
 
@@ -88,5 +89,22 @@ async function userRoutes(fastify, options) {
       return reply.code(500).send({ message: "Internal server error" });
     }
   });
+
+  fastify.get("/spotify", async (request, reply) => {
+    var redirect_uri = 'http://localhost:3000/'
+    var state = (Math.random() + 1).toString(36).substring(7);
+    var scope = 'user-read-private user-read-email';
+
+    const authorization = 'https://accounts.spotify.com/authorize?' +
+    new URLSearchParams({
+      response_type: 'code',
+      client_id: clientId,
+      scope: scope,
+      redirect_uri: redirect_uri,
+      state: state
+    })
+    console.log("authorization: ", authorization);
+    return reply.send({authorization: authorization})
+  })
 }
 module.exports = userRoutes;
